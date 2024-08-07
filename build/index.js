@@ -13,15 +13,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _modules_MobileMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./modules/MobileMenu */ "./src/modules/MobileMenu.js");
 /* harmony import */ var _modules_HeroSlider__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modules/HeroSlider */ "./src/modules/HeroSlider.js");
 /* harmony import */ var _modules_Search__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./modules/Search */ "./src/modules/Search.js");
+/* harmony import */ var _modules_MyNotes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./modules/MyNotes */ "./src/modules/MyNotes.js");
 
 
 // Our modules / classes
 
 
 
+
 // Instantiate a new object using our modules/classes
 const mobileMenu = new _modules_MobileMenu__WEBPACK_IMPORTED_MODULE_1__["default"]();
 const heroSlider = new _modules_HeroSlider__WEBPACK_IMPORTED_MODULE_2__["default"]();
+const note = new _modules_MyNotes__WEBPACK_IMPORTED_MODULE_4__["default"]();
 const liveSearch = new _modules_Search__WEBPACK_IMPORTED_MODULE_3__["default"]();
 
 /***/ }),
@@ -93,6 +96,116 @@ class MobileMenu {
   }
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (MobileMenu);
+
+/***/ }),
+
+/***/ "./src/modules/MyNotes.js":
+/*!********************************!*\
+  !*** ./src/modules/MyNotes.js ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! jquery */ "jquery");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_0__);
+
+class MyNotes {
+  constructor() {
+    this.events();
+  }
+  events() {
+    jquery__WEBPACK_IMPORTED_MODULE_0___default()('.delete-note').on('click', this.deleteNote);
+    jquery__WEBPACK_IMPORTED_MODULE_0___default()('.edit-note').on('click', this.editNote.bind(this));
+    jquery__WEBPACK_IMPORTED_MODULE_0___default()('.update-note').on('click', this.updateNote.bind(this));
+    jquery__WEBPACK_IMPORTED_MODULE_0___default()('.submit-note').on('click', this.createNote.bind(this));
+  }
+  editNote(e) {
+    const thisNote = jquery__WEBPACK_IMPORTED_MODULE_0___default()(e.target).parents("li");
+    if (thisNote.attr("state") == "editable") {
+      this.cancelEdit(thisNote);
+    } else {
+      this.editAble(thisNote);
+    }
+  }
+  editAble(thisNote) {
+    thisNote.find(".edit-note").html('<i class="fa fa-times" aria-hidden="true"></i> Cancel');
+    thisNote.find(".note-title-field, .note-body-field").removeAttr("readonly").addClass("note-active-field");
+    thisNote.find(".update-note").addClass("update-note--visible");
+    thisNote.attr("state", "editable");
+  }
+  cancelEdit(thisNote) {
+    thisNote.find(".edit-note").html('<i class="fa fa-pencil" aria-hidden="true"></i> Edit');
+    thisNote.find(".note-title-field, .note-body-field").attr("readonly", "readonly").removeClass("note-active-field");
+    thisNote.find(".update-note").removeClass("update-note--visible");
+    thisNote.attr("state", "cancel");
+  }
+  updateNote(e) {
+    const thisNote = jquery__WEBPACK_IMPORTED_MODULE_0___default()(e.target).parents("li");
+    const dataNote = {
+      "title": thisNote.find(".note-title-field").val(),
+      "content": thisNote.find(".note-body-field").val()
+    };
+    jquery__WEBPACK_IMPORTED_MODULE_0___default().ajax({
+      beforeSend: xhr => {
+        xhr.setRequestHeader('X-WP-Nonce', universityData.nonce);
+      },
+      url: 'http://localhost:8080/wp-advanced/wp-json/wp/v2/note/' + thisNote.attr("data-id"),
+      data: dataNote,
+      method: 'POST',
+      success: res => {
+        this.cancelEdit(thisNote);
+      },
+      error: err => console.log(err)
+    });
+  }
+  deleteNote(e) {
+    const noteID = jquery__WEBPACK_IMPORTED_MODULE_0___default()(e.target).parents("li");
+    jquery__WEBPACK_IMPORTED_MODULE_0___default().ajax({
+      beforeSend: xhr => {
+        xhr.setRequestHeader('X-WP-Nonce', universityData.nonce);
+      },
+      url: 'http://localhost:8080/wp-advanced/wp-json/wp/v2/note/' + noteID.attr("data-id"),
+      method: 'DELETE',
+      success: res => {
+        noteID.slideUp();
+      },
+      error: err => console.log(err)
+    });
+  }
+  createNote() {
+    const dataNewNote = {
+      "title": jquery__WEBPACK_IMPORTED_MODULE_0___default()('.new-note-title').val(),
+      "content": jquery__WEBPACK_IMPORTED_MODULE_0___default()('.new-note-body').val(),
+      "status": "publish"
+    };
+    jquery__WEBPACK_IMPORTED_MODULE_0___default().ajax({
+      beforeSend: xhr => {
+        xhr.setRequestHeader('X-WP-Nonce', universityData.nonce);
+      },
+      url: 'http://localhost:8080/wp-advanced/wp-json/wp/v2/note/',
+      data: dataNewNote,
+      method: 'POST',
+      success: res => {
+        console.log(res);
+        jquery__WEBPACK_IMPORTED_MODULE_0___default()('.new-note-title, .new-note-body').val("");
+        jquery__WEBPACK_IMPORTED_MODULE_0___default()(`
+                    <li data-id="${res.id}">
+                        <input readonly class="note-title-field" value="${res.title.raw}">
+                        <span class="edit-note"><i class="fa fa-pencil" aria-hidden="true"></i> Edit</span>
+                        <span class="delete-note"><i class="fa fa-trash-o" aria-hidden="true"></i> Delete</span>
+                        <textarea readonly class="note-body-field">${res.content.raw}</textarea>
+                        <span class="update-note btn btn--blue btn--small"><i class="fa fa-arrow-right" aria-hidden="true"></i> Save</span>
+                    </li>    
+                `).prependTo('#my-notes').hide().slideDown();
+      },
+      error: err => console.log(err)
+    });
+  }
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (MyNotes);
 
 /***/ }),
 
@@ -169,13 +282,30 @@ class Search {
                         ${results.programmes.length ? ' </ul>' : ''}
                         <h2 class="search-overlay__section-title">Professors</h2>
                         ${results.professors.length ? '<ul class="link-list min-list">' : '<p>Professors no match with search</p>'}
-                        ${results.professors.map(item => `<li><a href='${item.permalink}'>${item.title} by ${item.authorName}</a></li>`).join('')}
+                        ${results.professors.map(item => `<li class="professor-card__list-item">
+                        <a href="${item.permalink}" class="professor-card">
+                            <img src="${item.image}" alt="" class="professor-card__image">
+                            <span class="professor-card__name">${item.title}</span>
+                        </a>
+                        </li>`).join('')}
                         ${results.professors.length ? ' </ul>' : ''}
                     </div>
                     <div class="one-third">
                         <h2 class="search-overlay__section-title">Events</h2>
                         ${results.events.length ? '<ul class="link-list min-list">' : '<p>Events no match with search</p>'}
-                        ${results.events.map(item => `<li><a href='${item.permalink}'>${item.title} by ${item.authorName}</a></li>`).join('')}
+                        ${results.events.map(item => `<div class="event-summary">
+                            <a class="event-summary__date t-center" href="${item.permalink}">
+                                <?php 
+                                $eventsDate = new DateTime(get_field('events_date'));
+                                ?>
+                                <span class="event-summary__month">${item.date}</span>
+                                <span class="event-summary__day">${item.month}</span>
+                            </a>
+                            <div class="event-summary__content">
+                                <h5 class="event-summary__title headline headline--tiny"><a href="${item.permalink}">${item.title}</a></h5>
+                                <p>${item.description}<a href="${item.permalink}" class="nu gray">Read more</a></p>
+                            </div>
+                            </div>`).join('')}
                         ${results.events.length ? ' </ul>' : ''}
                     </div>
                 </div>

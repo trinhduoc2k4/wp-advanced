@@ -39,7 +39,8 @@ function getResults($data) {
                 "title" => get_the_title(),
                 "permalink" => get_the_permalink(),
                 "postType" => get_post_type(),
-                "authorName" => get_author_name()
+                "authorName" => get_author_name(),
+                "image" => get_the_post_thumbnail_url(0, 'professorLandscape')
             ));
         }
         if(get_post_type() == 'programmes') {
@@ -47,15 +48,53 @@ function getResults($data) {
                 "title" => get_the_title(),
                 "permalink" => get_the_permalink(),
                 "postType" => get_post_type(),
-                "authorName" => get_author_name()
+                "authorName" => get_author_name(),
+                "ID" => get_the_ID()
             ));
         }
         if(get_post_type() == 'event') {
+            $eventsDate = new DateTime(get_field('events_date'));
+            $description = wp_trim_words( get_the_content(), 25 );
             array_push($new_array['events'], array(
                 "title" => get_the_title(),
                 "permalink" => get_the_permalink(),
                 "postType" => get_post_type(),
-                "authorName" => get_author_name()
+                "authorName" => get_author_name(),
+                "date" => $eventsDate->format('d'),
+                "month" => $eventsDate->format('M'),
+                "description" => $description
+            ));
+        }
+    }
+
+    //search relationship
+    if(get_post_type() == 'programmes') {
+        $listSubject = $new_array['programmes'];
+        foreach($listSubject as $item) {
+            $query = array(
+                array (
+                    'key' => 'related_programs',
+                    'compare' => 'LIKE',
+                    'value' => '"' . $item['ID'] . '"'
+                )
+            );
+        }
+        $relatedPrograms = new WP_Query(
+            array(
+                'post_type' => 'professors',
+                'relation' => 'OR',
+                'meta_query' => $query
+            )
+        );
+    
+        while($relatedPrograms->have_posts()) {
+            $relatedPrograms->the_post();
+            array_push($new_array['professors'], array(
+                "title" => get_the_title(),
+                "permalink" => get_the_permalink(),
+                "postType" => get_post_type(),
+                "authorName" => get_author_name(),
+                "image" => get_the_post_thumbnail_url(0, 'professorLandscape')
             ));
         }
     }
