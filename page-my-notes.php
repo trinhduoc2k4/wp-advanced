@@ -1,4 +1,8 @@
 <?php
+  if(!get_current_user_id()) {
+    wp_redirect(site_url('/'));
+    exit;
+  }
 
   get_header();
 
